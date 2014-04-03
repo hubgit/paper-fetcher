@@ -1,0 +1,46 @@
+[
+  {
+    "xpath": "//meta[@name=\"citation_pdf_url\"]/@content",
+    "description": "citation_pdf_url"
+  },
+  {
+    "xpath": "//xhtml:meta[@name=\"citation_pdf_url\"]/@content",
+    "description": "xhtml:citation_pdf_url"
+  },
+  {
+    "xpath": "//meta[@name=\"wkhealth_pdf_url\"]/@content",
+    "description": "wkhealth_pdf_url"
+  },
+  {
+    "xpath": "//a/@pdfurl",
+    "description": "sciencedirect.com"
+  },
+  {
+    "xpath": "//form[@name=\"articleSelect\"]//input[@name=\"siteKey['sd']\"]/@value",
+    "description": "sciencedirect.com interstitial (HTML URL)"
+  },
+  {
+    "xpath": "//form[@name=\"articleSelect\"]//input[@name=\"siteKey['sd']\"]/@value",
+    "description": "pt.wkhealth.com interstitial (HTML URL)"
+  },
+  {
+    "xpath": "//img[@title=\"Download PDF\"]/../@href",
+    "description": "journals.cambridge.org interstitial (HTML URL). Needs 'a' node name selector?"
+  },
+  {
+    "xpath": "//a[text()=\"Download PDF\"]/@href",
+    "description": "nature.com"
+  },
+  {
+    "xpath": "//a[@class=\"pdf\"][text()=\"Download full text\"]/@href",
+    "description": "tandfonline.com"
+  },
+  {
+    "xpath": "//a[text()=\"PDF\"]/@href",
+    "description": "pucs.acs.org"
+  },
+  {
+    "xpath": "//a[@class=\"pdflink\"][contains(text(), \" PDF \")]/@href",
+    "description": "informahealthcare.com"
+  }
+]

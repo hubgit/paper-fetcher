@@ -8,9 +8,10 @@ class Article {
   protected $base;
 
   // construct
-  public function __construct($curl, $log, $doi) {
+  public function __construct($curl, $log, $selectors, $doi) {
     $this->curl = $curl;
     $this->log = $log;
+    $this->selectors = $selectors;
     $this->doi = trim($doi);
     $this->base = base64_encode($doi);
 
@@ -67,11 +68,14 @@ class Article {
       return;
     }
 
+    // metadata about HTML request
+    $info = $this->loadJSON($this->path('html'));
+
     // parse HTML to find PDF URL
     $doc = new DOMDocument;
     $doc->loadHTMLFile($this->path('html'));
 
-    $pdfURL = $this->findPdfUrl($doc);
+    $pdfURL = $this->findPdfUrl($doc, $info['url']);
 
     if (!$pdfURL) {
       $this->log(array('No PDF URL'));
@@ -79,7 +83,6 @@ class Article {
     }
 
     // convert relative PDF URL to absolute URL
-    $info = $this->loadJSON($this->path('html'));
     $pdfURL = $this->absoluteURL($doc, $pdfURL, $info['url']);
     printf("PDF URL: %s\n", $pdfURL);
 
@@ -212,64 +215,18 @@ class Article {
   }
 
   // find the URL of a PDF file in a HTML file
-  protected function findPdfUrl($doc) {
+  protected function findPdfUrl($doc, $htmlURL) {
     $xpath = new DOMXPath($doc);
     $xpath->registerNamespace('xhtml', 'http://www.w3.org/1999/xhtml');
 
-    // citation_pdf_url
-    if ($url = $xpath->evaluate('string(//meta[@name="citation_pdf_url"]/@content)')) {
-      return $url;
-    }
-
-    // xhtml:citation_pdf_url
-    if ($url = $xpath->evaluate('string(//xhtml:meta[@name="citation_pdf_url"]/@content)')) {
-      return $url;
-    }
-
-    // wkhealth_pdf_url
-    if ($url = $xpath->evaluate('string(//meta[@name="wkhealth_pdf_url"]/@content)')) {
-      return $url;
-    }
-
-    // sciencedirect.com
-    if ($url = $xpath->evaluate('string(//a/@pdfurl)')) {
-      return $url;
-    }
-
-    // sciencedirect.com interstitial
-    if ($url = $xpath->evaluate('string(//form[@name="articleSelect"]//input[@name="siteKey[\'sd\']"]/@value)')) {
-      return $url; // HTML URL
-    }
-
-    // pt.wkhealth.com interstitial
-    if ($url = $xpath->evaluate('string(//form[@name="articleSelect"]//input[@name="siteKey[\'sd\']"]/@value)')) {
-      return $url; // HTML URL
-    }
-
-    // journals.cambridge.org interstitial
-    // TODO: "a" node name selector?
-    if ($url = $xpath->evaluate('string(//img[@title="Download PDF"]/../@href)')) {
-      return $url; // HTML URL
-    }
-
-    // nature.com
-    if ($url = $xpath->evaluate('string(//a[text()="Download PDF"]/@href)')) {
-      return $url;
-    }
-
-    // tandfonline.com
-    if ($url = $xpath->evaluate('string(//a[@class="pdf"][text()="Download full text"]/@href)')) {
-      return $url;
-    }
-
-    // pubs.acs.org
-    if ($url = $xpath->evaluate('string(//a[text()="PDF"]/@href)')) {
-      return $url;
-    }
-
-    // informahealthcare.com
-    if ($url = $xpath->evaluate('string(//a[@class="pdflink"][contains(text(), " PDF ")]/@href)')) {
-      return $url;
+    foreach ($this->selectors as $selector) {
+      if (!isset($selector['url']) || preg_match($selector['url'], $htmlURL)) {
+        if (isset($selector['xpath'])) {
+          if ($url = $xpath->evaluate(sprintf('string(%s)', $selector['xpath']))) {
+            return $url;
+          }
+        }
+      }
     }
 
     return null;

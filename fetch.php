@@ -32,9 +32,13 @@ curl_setopt_array($curl, array(
 $dois = file('dois.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 printf("Fetching data for %d DOIs\n", count($dois));
 
+shuffle($dois); // randomise the DOIs to distribute load
+
 $log = fopen('error.log', 'w');
 
+$selectors = json_decode(file_get_contents('selectors.json'), true);
+
 foreach ($dois as $doi) {
-  $article = new Article($curl, $log, $doi);
+  $article = new Article($curl, $log, $selectors, $doi);
   $article->fill();
 }
