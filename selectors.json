@@ -2,7 +2,7 @@
   {
     "url": "/www\\.jiasociety\\.org/",
     "xpath": "//a[@class=\"action\"][text()='Download this PDF file']/@href",
-    "description": "informahealthcare.com"
+    "description": "jiasociety.org"
   },
   {
     "xpath": "//meta[@name=\"citation_pdf_url\"]/@content",
