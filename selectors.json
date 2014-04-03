@@ -1,7 +1,7 @@
 [
   {
     "url": "/www\\.jiasociety\\.org/",
-    "xpath": "//a[@class=\"action\"][text()='Download this PDF file']/@href",
+    "xpath": "//a[@class=\"action\"][text()=\"Download this PDF file\"]/@href",
     "description": "jiasociety.org"
   },
   {
