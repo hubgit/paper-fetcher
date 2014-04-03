@@ -146,7 +146,7 @@ class Article {
       return;
     }
 
-    switch (Util::detectContentType($info['content_type'])) {
+    switch (Util::detectContentType($info['content_type'], $result)) {
       case 'html':
       file_put_contents($file, $result);
       break;
@@ -173,7 +173,7 @@ class Article {
       return;
     }
 
-    switch (Util::detectContentType($info['content_type'])) {
+    switch (Util::detectContentType($info['content_type'], $result)) {
       // PDF response
       case 'pdf':
       file_put_contents($file, $result);

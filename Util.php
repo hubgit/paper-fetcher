@@ -63,7 +63,7 @@ class Util {
   }
 
   // detect the content type from a Content-Type response header
-  public static function detectContentType($contentType) {
+  public static function detectContentType($contentType, $content = null) {
     if (preg_match('/html/i', $contentType)) {
       return 'html';
     }
@@ -74,6 +74,18 @@ class Util {
 
     if (preg_match('/json/i', $contentType)) {
       return 'json';
+    }
+
+    if (preg_match('/octet-stream/i', $contentType)) {
+      if (!is_null($content)) {
+        // try to detect the mime type from the content
+        $finfo = finfo_open(FILEINFO_MIME);
+        $mimeType = finfo_buffer($finfo, $content, FILEINFO_MIME);
+
+        if ($mimeType && $mimeType != $contentType) {
+          return self::detectContentType($mimeType);
+        }
+      }
     }
   }
 }
