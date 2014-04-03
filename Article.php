@@ -69,13 +69,13 @@ class Article {
     }
 
     // metadata about HTML request
-    $info = $this->loadJSON($this->path('html'));
+    $htmlInfo = $this->loadJSON($this->path('html'));
 
     // parse HTML to find PDF URL
     $doc = new DOMDocument;
     $doc->loadHTMLFile($this->path('html'));
 
-    $pdfURL = $this->findPdfUrl($doc, $info['url']);
+    $pdfURL = $this->findPdfUrl($doc, $htmlInfo['url']);
 
     if (!$pdfURL) {
       $this->log(array('No PDF URL'));
@@ -83,7 +83,7 @@ class Article {
     }
 
     // convert relative PDF URL to absolute URL
-    $pdfURL = $this->absoluteURL($doc, $pdfURL, $info['url']);
+    $pdfURL = Util::absoluteURL($doc, $pdfURL, $htmlInfo['url']);
     printf("PDF URL: %s\n", $pdfURL);
 
     // fetch PDF
@@ -114,7 +114,7 @@ class Article {
       return;
     }
 
-    switch ($this->detectContentType($info['content_type'])) {
+    switch (Util::detectContentType($info['content_type'])) {
       case 'json':
         // pretty print the JSON
         $result = json_encode(json_decode($result, true), JSON_PRETTY_PRINT);
@@ -146,7 +146,7 @@ class Article {
       return;
     }
 
-    switch ($this->detectContentType($info['content_type'])) {
+    switch (Util::detectContentType($info['content_type'])) {
       case 'html':
       file_put_contents($file, $result);
       break;
@@ -173,7 +173,7 @@ class Article {
       return;
     }
 
-    switch ($this->detectContentType($info['content_type'])) {
+    switch (Util::detectContentType($info['content_type'])) {
       // PDF response
       case 'pdf':
       file_put_contents($file, $result);
@@ -186,9 +186,9 @@ class Article {
         $doc = new DOMDocument;
         $doc->loadHTML($result);
 
-        if ($pdfURL = $this->findPdfUrl($doc)){
+        if ($pdfURL = $this->findPdfUrl($doc, $info['url'])){
           print_r(array($pdfURL, $info['url']));
-          $pdfURL = $this->absoluteURL($doc, $pdfURL, $info['url']);
+          $pdfURL = Util::absoluteURL($doc, $pdfURL, $info['url']);
           printf("Next PDF URL: %s\n", $pdfURL);
 
           if ($pdfURL && $pdfURL != $url) {
@@ -196,21 +196,6 @@ class Article {
           }
         };
         break;
-    }
-  }
-
-  // detect the content type from a Content-Type response header
-  protected function detectContentType($contentType) {
-    if (preg_match('/html/i', $contentType)) {
-      return 'html';
-    }
-
-    if (preg_match('/pdf/i', $contentType)) {
-      return 'pdf';
-    }
-
-    if (preg_match('/json/i', $contentType)) {
-      return 'json';
     }
   }
 
@@ -230,67 +215,5 @@ class Article {
     }
 
     return null;
-  }
-
-  // convert a relative URL to an absolute URL
-  protected function absoluteURL($doc, $url, $baseURL) {
-    if (preg_match('/^https?:\/\//', $url)) {
-      return $url;
-    }
-
-    if ($tmp = $this->baseURL($doc)) {
-      $baseURL = $tmp;
-    };
-
-    printf("Base URL: %s\n", $baseURL);
-
-    return $this->rel2abs($url, $baseURL);
-  }
-
-  // read a base URL from a HTML document
-  protected function baseURL($doc) {
-    $xpath = new DOMXPath($doc);
-    $xpath->registerNamespace('xhtml', 'http://www.w3.org/1999/xhtml');
-
-    if ($url = $xpath->evaluate('string(//head/base/@href)')) {
-      return $url;
-    }
-
-    if ($url = $xpath->evaluate('string(//xhtml:head/xhtml:base/@href)')) {
-      return $url;
-    }
-
-    return null;
-  }
-
-  // http://stackoverflow.com/a/4444490/145899
-  protected function rel2abs($rel, $base){
-    /* return if already absolute URL */
-    if (parse_url($rel, PHP_URL_SCHEME) != '') return $rel;
-
-    /* remove existing fragments and query strings from the base URL */
-    $base = preg_replace('/[#\?].*/', '', $base);
-
-    /* queries and anchors */
-    if ($rel[0] == '#' || $rel[0] == '?') return $base . $rel;
-
-    /* parse base URL */
-    $parts = parse_url($base);
-
-    /* remove non-directory element from path */
-    $path = preg_replace('#/[^/]*$#', '', $parts['path']);
-
-    /* destroy path if relative url points to root */
-    if ($rel[0] == '/') $path = '';
-
-    /* dirty absolute URL */
-    $abs = $parts['host'] . $path . '/' . $rel;
-
-    /* replace '//' or '/./' or '/foo/../' with '/' */
-    $re = array('#(/\.?/)#', '#/(?!\.\.)[^/]+/\.\./#');
-    for($n = 1; $n > 0; $abs = preg_replace($re, '/', $abs, -1, $n)) {}
-
-    /* absolute URL is ready! */
-    return $parts['scheme'] . '://' . $abs;
   }
 }

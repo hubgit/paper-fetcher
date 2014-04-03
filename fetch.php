@@ -1,6 +1,7 @@
 <?php
 
 require 'Article.php';
+require 'Util.php';
 
 libxml_use_internal_errors(true);
 
