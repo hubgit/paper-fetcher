@@ -68,26 +68,8 @@ class Article {
       return;
     }
 
-    // metadata about HTML request
-    $htmlInfo = $this->loadJSON($this->path('html'));
-
-    // parse HTML to find PDF URL
-    $doc = new DOMDocument;
-    $doc->loadHTMLFile($this->path('html'));
-
-    $pdfURL = $this->findPdfUrl($doc, $htmlInfo['url']);
-
-    if (!$pdfURL) {
-      $this->log(array('No PDF URL'));
-      return;
-    }
-
-    // convert relative PDF URL to absolute URL
-    $pdfURL = Util::absoluteURL($doc, $pdfURL, $htmlInfo['url']);
-    printf("PDF URL: %s\n", $pdfURL);
-
     // fetch PDF
-    $this->fetchPDF($pdfURL);
+    $this->fetchPDF();
 
     if (!file_exists($this->path('pdf'))) {
       $this->log(array('No PDF'));
@@ -155,10 +137,17 @@ class Article {
 
   // fetch a PDF file
   // if HTML is returned, look for a different PDF URL and try that
-  public function fetchPDF($url) {
+  public function fetchPDF() {
     $file = $this->path('pdf');
 
     if ($this->fetched($file)) {
+      return;
+    }
+
+    $url = $this->buildPdfUrl();
+
+    if (!$url) {
+      $this->log(array('No PDF URL'));
       return;
     }
 
@@ -199,6 +188,27 @@ class Article {
     }
   }
 
+  // parse the HTML file to find a PDF URL; ensure an absolute URL
+  protected function buildPdfUrl() {
+    // load the HTML file
+    $doc = new DOMDocument;
+    $doc->loadHTMLFile($this->path('html'));
+
+    // metadata about HTML request
+    $htmlInfo = $this->loadJSON($this->path('html'));
+
+    // parse HTML to find PDF URL
+    $pdfURL = $this->findPdfUrl($doc, $htmlInfo['url']);
+
+    // convert relative PDF URL to absolute URL
+    if ($pdfURL) {
+      $pdfURL = Util::absoluteURL($doc, $pdfURL, $htmlInfo['url']);
+      printf("PDF URL: %s\n", $pdfURL);
+    }
+
+    return $pdfURL;
+  }
+
   // find the URL of a PDF file in a HTML file
   protected function findPdfUrl($doc, $htmlURL) {
     $xpath = new DOMXPath($doc);
@@ -207,8 +217,8 @@ class Article {
     foreach ($this->selectors as $selector) {
       if (!isset($selector['url']) || preg_match($selector['url'], $htmlURL)) {
         if (isset($selector['xpath'])) {
-          if ($url = $xpath->evaluate(sprintf('string(%s)', $selector['xpath']))) {
-            return $url;
+          if ($pdfURL = $xpath->evaluate(sprintf('string(%s)', $selector['xpath']))) {
+            return $pdfURL;
           }
         }
       }
